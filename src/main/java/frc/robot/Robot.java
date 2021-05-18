@@ -204,9 +204,9 @@ public class Robot extends TimedRobot {
     //to set the intake speed, otherwise, if the button is not pressed, use the left trigger value to 
     //set the intake speed"
     if(controller.getBumper(Hand.kLeft)) {
-      intake.set(-controller.getTriggerAxis(Hand.kLeft));
-    } else {
       intake.set(controller.getTriggerAxis(Hand.kLeft));
+    } else {
+      intake.set(-controller.getTriggerAxis(Hand.kLeft));
     }
   }
 }
