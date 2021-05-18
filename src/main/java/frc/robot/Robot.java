@@ -50,6 +50,9 @@ public class Robot extends TimedRobot {
   private SpeedController rearLeft;
   private SpeedController rearRight;
   private SpeedController intake;
+  private SpeedController ballFeeder;
+  private SpeedController shooter1;
+  private SpeedController shooter2;
 
   //Our SpeedControllerGroup Initialization Variables
   //SpeedControllerGroups are designed to take multiple SpeedController variables,
@@ -57,6 +60,7 @@ public class Robot extends TimedRobot {
   //In this case, we've created left and right side representations of our drivetrain
   private SpeedControllerGroup left;
   private SpeedControllerGroup right;
+  private SpeedControllerGroup shooter;
 
   //Our DifferentialDrive Initialization Variable
   //A DifferentialDrive is what our robot uses to move. It's a combination
@@ -113,6 +117,11 @@ public class Robot extends TimedRobot {
     //using "new WPI_VictorSPX(canID)"
     intake = new WPI_VictorSPX(11);
 
+    ballFeeder = new WPI_VictorSPX(14);
+
+    shooter1 = new CANSparkMax(21, MotorType.kBrushless);
+    shooter2 = new CANSparkMax(23, MotorType.kBrushless);
+
     //Next, we fill in our SpeedControllerGroups using
     //new SpeedControllerGroup(listOfSpeedControllers)
     //You can put any number of SpeedControllers into a SpeedControllerGroup,
@@ -120,6 +129,8 @@ public class Robot extends TimedRobot {
     //on the left, two on the right.
     left = new SpeedControllerGroup(frontLeft, rearLeft);
     right = new SpeedControllerGroup(frontRight, rearRight);
+
+    shooter = new SpeedControllerGroup(shooter1, shooter2);
 
     //Next, we setup our DifferentialDrive using
     //new DifferentialDrive(leftSideOfDrivetrain, rightSideOfDrivetrain)
@@ -215,5 +226,15 @@ public class Robot extends TimedRobot {
     } else {
       intake.set(-controller.getTriggerAxis(Hand.kLeft));
     }
+
+    if(controller.getXButton()) {
+      ballFeeder.set(1);
+    } else if(controller.getYButton()) {
+      ballFeeder.set(-1);
+    } else {
+      ballFeeder.set(0);
+    }
+
+    shooter.set(controller.getTriggerAxis(Hand.kRight));
   }
 }
