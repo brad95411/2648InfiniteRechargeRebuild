@@ -1,5 +1,11 @@
 package frc.robot;
 
+/*
+  Project: 2648InfiniteRechargeRebuild
+  Description: A rework of code that was lost so we can make the robot move again
+  Authors: Brad B and Marcelino C
+*/
+
 //Our imports, imports allow access to other "types"
 //A type is often a representation of a real world thing (although it doesn't necessarily have to be)
 //Types can be as simple as an integer, or a single character
