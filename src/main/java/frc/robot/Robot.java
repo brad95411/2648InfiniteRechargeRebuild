@@ -12,6 +12,7 @@ package frc.robot;
 //Types can be as simple as an integer, or a single character
 //Types can be as complicated as representing a compressor, a motor controller, etc.
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.SpeedControllerGroup;
@@ -53,6 +54,7 @@ public class Robot extends TimedRobot {
   private SpeedController ballFeeder;
   private SpeedController shooter1;
   private SpeedController shooter2;
+  private SpeedController hoodMotor;
 
   //Our SpeedControllerGroup Initialization Variables
   //SpeedControllerGroups are designed to take multiple SpeedController variables,
@@ -91,6 +93,9 @@ public class Robot extends TimedRobot {
   //This DoubleSolenoid allows us to shift between high and low gear
   private DoubleSolenoid shifter;
 
+  private DigitalInput hoodDownLimitSwitch;
+  private DigitalInput hoodUpLimitSwitch;
+
   //Our robotInit() Method
   //A method in the simplest terms is something the robot can "do".
   //In this case, the robotInit method is where you should 
@@ -116,6 +121,8 @@ public class Robot extends TimedRobot {
     //of a VictorSPX motor controller. We "fill in" this variable
     //using "new WPI_VictorSPX(canID)"
     intake = new WPI_VictorSPX(11);
+
+    hoodMotor = new WPI_VictorSPX(13);
 
     ballFeeder = new WPI_VictorSPX(14);
 
@@ -165,6 +172,9 @@ public class Robot extends TimedRobot {
     //These IDs come from whatever the DoubleSolenoid is plugged into on
     //the Pneumatics Control Module (PCM). 
     shifter = new DoubleSolenoid(0, 1);
+
+    hoodDownLimitSwitch = new DigitalInput(0);
+    hoodUpLimitSwitch = new DigitalInput(1);
   }
 
   //Ignore me for now
@@ -227,14 +237,27 @@ public class Robot extends TimedRobot {
       intake.set(-controller.getTriggerAxis(Hand.kLeft));
     }
 
+    /*
     if(controller.getXButton()) {
       ballFeeder.set(1);
     } else if(controller.getYButton()) {
       ballFeeder.set(-1);
     } else {
       ballFeeder.set(0);
-    }
+    }*/
 
     shooter.set(controller.getTriggerAxis(Hand.kRight));
+
+    System.out.println("POV: " + controller.getPOV());
+    System.out.println("Hood Up Value: " + hoodUpLimitSwitch.get());
+    System.out.println("Hood Down Value: " + hoodDownLimitSwitch.get());
+
+    if(controller.getXButton() && hoodUpLimitSwitch.get()) {
+      hoodMotor.set(1);
+    } else if(controller.getYButton() && hoodDownLimitSwitch.get()) {
+      hoodMotor.set(-1);
+    } else {
+      hoodMotor.set(0);
+    }
   }
 }
