@@ -93,6 +93,14 @@ public class Robot extends TimedRobot {
   //This DoubleSolenoid allows us to shift between high and low gear
   private DoubleSolenoid shifter;
 
+  //Our DigitalInput Initialization Variables
+  //A DigitalInput is a way of sensing something that can either be on
+  //or off (true or false). In this use case, we are using these DigitalInputs
+  //to detect whether or not our hood is all the way up, or all the way down.
+  //Knowing this will help us prevent the motor that makes the hood move
+  //from breaking the plastic that it's made out of.
+  //These limit switches are true if they are NOT pressed, and false if they are
+  //I know this may seem a little backwards logically, but we'll make it work
   private DigitalInput hoodDownLimitSwitch;
   private DigitalInput hoodUpLimitSwitch;
 
@@ -103,8 +111,8 @@ public class Robot extends TimedRobot {
   //This method is "activated" (or called) once when the robot first
   //finishes booting up
   public void robotInit() {
-    //The first thing we do is setup our drivetrain motors.
-    //We use NEO motors on our drivetrain, so we need to make use
+    //The first thing we do is setup our drivetrain and shooter motors.
+    //We use NEO motors on our drivetrain and shooter, so we need to make use
     //of the SPARK MAX motor controllers. We "fill in" our variables
     //using "new CANSparkMax(canID, motortype)"
     //The numbers represent CAN bus IDs, these are specially assigned
@@ -116,27 +124,25 @@ public class Robot extends TimedRobot {
     frontRight = new CANSparkMax(28, MotorType.kBrushless);
     rearLeft = new CANSparkMax(22, MotorType.kBrushless);
     rearRight = new CANSparkMax(27, MotorType.kBrushless);
+    shooter1 = new CANSparkMax(21, MotorType.kBrushless);
+    shooter2 = new CANSparkMax(23, MotorType.kBrushless);
 
-    //We use a CIM motor on our intake, so we need to make use
+    //We use a CIM motor on our intake and ball feeder, and we use
+    //a window motor for our shooter hood, so we need to make use
     //of a VictorSPX motor controller. We "fill in" this variable
     //using "new WPI_VictorSPX(canID)"
     intake = new WPI_VictorSPX(11);
-
-    hoodMotor = new WPI_VictorSPX(13);
-
     ballFeeder = new WPI_VictorSPX(14);
-
-    shooter1 = new CANSparkMax(21, MotorType.kBrushless);
-    shooter2 = new CANSparkMax(23, MotorType.kBrushless);
+    hoodMotor = new WPI_VictorSPX(13);
 
     //Next, we fill in our SpeedControllerGroups using
     //new SpeedControllerGroup(listOfSpeedControllers)
     //You can put any number of SpeedControllers into a SpeedControllerGroup,
     //for our purposes though, each group only gets two variables each, two
-    //on the left, two on the right.
+    //on the left side of the drivetain, two on the right, and then
+    //two for the shooter (the shooter has two motors that make it work).
     left = new SpeedControllerGroup(frontLeft, rearLeft);
     right = new SpeedControllerGroup(frontRight, rearRight);
-
     shooter = new SpeedControllerGroup(shooter1, shooter2);
 
     //Next, we setup our DifferentialDrive using
@@ -173,6 +179,14 @@ public class Robot extends TimedRobot {
     //the Pneumatics Control Module (PCM). 
     shifter = new DoubleSolenoid(0, 1);
 
+    //Next, we set up our DigitalInputs using
+    //new DigitalInput(DIOID)
+    //We need to specify a value when creating a DigitalInput
+    //that represents what Digital Input/Output (DIO) channel
+    //we've plugged into on the RoboRIO. In this case, the limit switch that
+    //checks to see if the hood is all the way down is plugged into DIO 0,
+    //and the limit switch that checks to see if the hood is all the way up
+    //is plugged into DIO 1
     hoodDownLimitSwitch = new DigitalInput(0);
     hoodUpLimitSwitch = new DigitalInput(1);
   }
@@ -226,7 +240,7 @@ public class Robot extends TimedRobot {
     //hand side of the controller is pressed. If it is, we get the value of the left hand
     //trigger and make it negative using a minus sign (-controller.getTriggerAxis(Hand.kLeft))
     //We pass this value to intake.set to set the speed of the intake motor, based on how much
-    //the left trigger has been pressed down. We do something similiar if the button is not pressed
+    //the left trigger has been pressed down. We do something similar if the button is not pressed
     //but instead of negating the value, we just send it as is. If you were to write this out
     //like a sentence, you could say "If the left bumper is pressed, use the negative left trigger value
     //to set the intake speed, otherwise, if the button is not pressed, use the left trigger value to 
@@ -237,24 +251,42 @@ public class Robot extends TimedRobot {
       intake.set(-controller.getTriggerAxis(Hand.kLeft));
     }
 
-    /*
+    //In this if statement, we're asking questions about what direction our ball feeder should
+    //move (either moving balls towards the shooter, or away from it).
+    //controller.getXButton() checks to see if the x button on the controller is pressed. 
+    //If it is, we set the motor for the ball feeder to full speed forward (1) using
+    //ballFeeder.set(speed). We do something similar if the Y button is pressed, except
+    //instead of saying full forward, we say full reverse (-1). If neither button is pressed
+    //we stop the motor by calling .set(0). If you were to write this out like a sentence,
+    //you could say "If the x button is pressed, move balls towards the shooter, else if the 
+    //y button is pressed, move balls away from the shooter, otherwise, if neither button is pressed,
+    //stop the ball feeder."
     if(controller.getXButton()) {
       ballFeeder.set(1);
     } else if(controller.getYButton()) {
       ballFeeder.set(-1);
     } else {
       ballFeeder.set(0);
-    }*/
+    }
 
+    //This piece is pretty basic, we've seen pieces of this before.
+    //We are setting the speed of the shooter motors, by getting how much
+    //the right hand trigger has been pressed down. 
     shooter.set(controller.getTriggerAxis(Hand.kRight));
 
-    System.out.println("POV: " + controller.getPOV());
-    System.out.println("Hood Up Value: " + hoodUpLimitSwitch.get());
-    System.out.println("Hood Down Value: " + hoodDownLimitSwitch.get());
-
-    if(controller.getXButton() && hoodUpLimitSwitch.get()) {
+    //In this if statement, we're asking questions about how we should move the hood
+    //of the shooter. controller.getPOV() is used to retrieve what button on the d-pad
+    //is being pressed. 0 means that your pushing the up button, 180 means your pushing
+    //the down button. In order for this to work, we have to check two things, whether or not
+    //the right d-pad button is pressed AND making sure that the limit switch for the direction
+    //we want to move in is safe and we're not going to break something (i.e. we check the limit switch)
+    //If you were to write this out like a sentence, you could say "If the d-pad up button is pressed 
+    //AND the hood up limit switch is not pressed, move the hood up, else if the d-pad down button is
+    //pressed AND the hood down limit switch is not pressed, move the hood down, otherwise if neither 
+    //of these are true, stop the hood motor."
+    if(controller.getPOV() == 0 && hoodUpLimitSwitch.get()) {
       hoodMotor.set(1);
-    } else if(controller.getYButton() && hoodDownLimitSwitch.get()) {
+    } else if(controller.getPOV() == 180 && hoodDownLimitSwitch.get()) {
       hoodMotor.set(-1);
     } else {
       hoodMotor.set(0);
