@@ -285,9 +285,9 @@ public class Robot extends TimedRobot {
     //pressed AND the hood down limit switch is not pressed, move the hood down, otherwise if neither 
     //of these are true, stop the hood motor."
     if(controller.getPOV() == 0 && hoodUpLimitSwitch.get()) {
-      hoodMotor.set(1);
-    } else if(controller.getPOV() == 180 && hoodDownLimitSwitch.get()) {
       hoodMotor.set(-1);
+    } else if(controller.getPOV() == 180 && hoodDownLimitSwitch.get()) {
+      hoodMotor.set(1);
     } else {
       hoodMotor.set(0);
     }
